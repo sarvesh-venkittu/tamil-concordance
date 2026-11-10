@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ta">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>Tamil Concordance</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-ta">தமிழ்</span> Concordance</div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="search" role="tab">Search</button>
+      <button class="tab" data-view="library" role="tab">My Books <span class="pill" id="bookCount">0</span></button>
+    </nav>
+    <div class="textsize" title="Text size">
+      <button id="smaller" aria-label="Smaller text">A−</button>
+      <button id="larger" aria-label="Larger text">A+</button>
+    </div>
+  </header>
+
+  <!-- SEARCH -->
+  <section id="view-search" class="view active">
+    <div class="searchbar">
+      <div class="inputwrap">
+        <svg class="icon-search" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Type a word in English letters — e.g. aRam, kaathal, thiru">
+        <button id="langToggle" class="lang on" title="Typing in English becomes Tamil (Ctrl+G to switch)">அ</button>
+        <ul id="suggest" class="suggest" role="listbox" hidden></ul>
+      </div>
+      <div class="segmented" id="modes" role="radiogroup" aria-label="Match">
+        <button data-mode="starts" class="active" title="Words that begin with what you typed">Starts with</button>
+        <button data-mode="word" title="Only this exact word">Whole word</button>
+        <button data-mode="anywhere" title="Anywhere inside a word">Anywhere</button>
+      </div>
+    </div>
+    <p class="hint" id="hint">Type in English and pick the Tamil word: <kbd>Space</kbd> takes the first choice, <kbd>↑</kbd><kbd>↓</kbd> or a number to choose another, <kbd>Esc</kbd> keeps the English letters.</p>
+
+    <div class="layout">
+      <aside class="books-filter">
+        <div class="aside-title">Search in</div>
+        <ul id="filterList"></ul>
+      </aside>
+      <div class="results" id="results">
+        <div class="placeholder" id="searchPlaceholder">
+          <div class="big-ta">அ</div>
+          <p>Start typing to search every book in your library.</p>
+        </div>
+        <div id="summary" class="summary" hidden></div>
+        <div id="forms" class="forms" hidden></div>
+        <div id="hitList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="view-library" class="view">
+    <div class="lib-wrap">
+      <div class="lib-head">
+        <div>
+          <h1>My Books</h1>
+          <p class="muted">The books here are the ones searched. Add any PDF you have downloaded from Project Madurai.</p>
+        </div>
+        <div class="lib-actions">
+          <button class="btn primary" id="addBtn">＋ Add books</button>
+          <button class="btn link" id="pmLink">Get books from Project Madurai ↗</button>
+        </div>
+      </div>
+      <div id="drop" class="drop">
+        <div class="drop-inner">Drop PDF files here, or <button class="btn link inline" id="addBtn2">choose files</button></div>
+        <div class="drop-sub">Project Madurai’s Unicode (HTML) versions work too and give the most accurate text.</div>
+      </div>
+      <ul id="progress" class="progress"></ul>
+      <ul id="bookList" class="book-list"></ul>
+      <div class="settings">
+        <label><input type="checkbox" id="googleToggle" checked> Also show Google’s suggestions when connected to the internet</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- FIRST RUN -->
+  <div id="welcome" class="welcome" hidden>
+    <div class="welcome-card">
+      <div class="big-ta">வணக்கம்</div>
+      <h2>Welcome to your Tamil concordance</h2>
+      <ol>
+        <li>Download books (PDF) from <button class="btn link inline" id="pmLink2">Project Madurai</button>.</li>
+        <li>Add them here — they stay in your library.</li>
+        <li>Search any word, typing in Tamil or in English letters.</li>
+      </ol>
+      <button class="btn primary large" id="addBtn3">＋ Add your first books</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

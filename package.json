@@ -1,0 +1,49 @@
+{
+  "name": "tamil-concordance",
+  "productName": "Tamil Concordance",
+  "version": "1.0.0",
+  "description": "A personal Tamil concordance for Project Madurai books. Add the PDFs you have, then search every word, typing in English letters if you like.",
+  "main": "app/main.js",
+  "type": "module",
+  "license": "MIT",
+  "author": "Sarvesh Venkittu",
+  "homepage": "https://github.com/sarvesh-venkittu/tamil-concordance",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist:mac": "electron-builder --mac --universal",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "pdfjs-dist": "4.10.38"
+  },
+  "devDependencies": {
+    "electron": "38.8.6",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "io.github.sarvesh-venkittu.tamilconcordance",
+    "productName": "Tamil Concordance",
+    "asar": false,
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "app/**/*",
+      "package.json",
+      "node_modules/pdfjs-dist/package.json",
+      "node_modules/pdfjs-dist/legacy/build/pdf.mjs",
+      "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "!node_modules/pdfjs-dist/**/*.map",
+      "!node_modules/@napi-rs/**"
+    ],
+    "mac": {
+      "category": "public.app-category.reference",
+      "target": [{ "target": "dmg" }],
+      "icon": "build/icon.icns",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "dmg": { "title": "Tamil Concordance" },
+    "win": { "target": [{ "target": "nsis" }], "icon": "build/icon.png" },
+    "nsis": { "oneClick": true, "perMachine": false }
+  }
+}
