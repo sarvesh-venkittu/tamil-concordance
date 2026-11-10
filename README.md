@@ -45,6 +45,9 @@ Each person's copy holds their own library, so it only searches the books they'v
    - **macOS 14 or older:** right-click (or Control-click) the app in Applications, choose **Open**,
      then click **Open** again.
 
+If the app only bounces in the Dock and never opens (likely when the DMG was sent by email or
+AirDrop), quit it and run `xattr -cr "/Applications/Tamil Concordance.app"` in Terminal, then open it again.
+
 After that it opens normally. There is a simple step-by-step guide for non-technical users in
 [docs/USER_GUIDE.md](docs/USER_GUIDE.md).
 

@@ -19,6 +19,22 @@ This guide is for anyone using the app, with no computer experience needed.
    - Click **Open Anyway** next to *Tamil Concordance*, then type your Mac password if asked.
    - *(Older Macs: instead, hold **Control**, click the app, choose **Open**, then **Open** again.)*
 
+**If the icon just keeps bouncing in the Dock and nothing opens** (common when the app arrived by
+email or AirDrop):
+
+1. Right-click the bouncing icon in the Dock → **Quit** (or **Force Quit**).
+2. Open **Terminal** (press ⌘ Space, type *Terminal*, press Return).
+3. Paste this line and press Return:
+
+   ```
+   xattr -cr "/Applications/Tamil Concordance.app"
+   ```
+
+4. Open the app again.
+
+This removes the "downloaded from the internet" flag that macOS puts on apps that aren't from the
+App Store. It only affects this one app.
+
 From then on it opens like any other app. Tip: right-click its icon in the Dock and choose
 **Options → Keep in Dock**.
 
