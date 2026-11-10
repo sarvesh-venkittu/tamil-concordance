@@ -39,7 +39,8 @@ function buildLines(items, plan) {
     // In Mac-made TSCII PDFs the byte for டி is a non-breaking space, which pdf.js
     // emits as a separate wide " " item. Put the letter back.
     if (mode === 'tscii-mac' && /^\s$/.test(it.str) && (it.width || 0) > size * 0.45 && (it.width || 0) < size * 1.2) {
-      cur = cur.replace(/ $/, '') + 'டி';
+      // a wider item is டி plus the word space that followed it
+      cur = cur.replace(/ $/, '') + 'டி' + ((it.width || 0) > size * 0.95 ? ' ' : '');
       lastY = y; lastEndX = x + (it.width || 0); prev = it; continue;
     }
     cur += decodeRun(collapseRepeats(it.str), mode, plan.visual);
@@ -50,6 +51,19 @@ function buildLines(items, plan) {
   }
   push();
   return lines;
+}
+
+// Drop page furniture: "Page 12 of 126 …" lines and any line (digits ignored) that repeats
+// on more than a third of the pages, such as a running title or the Project Madurai footer.
+function stripRunningHeads(pages) {
+  const key = (l) => l.replace(/\d+/g, '#').trim();
+  const seen = new Map();
+  for (const p of pages) for (const k of new Set(p.lines.map(key))) seen.set(k, (seen.get(k) || 0) + 1);
+  const limit = Math.max(3, pages.length / 3);
+  return pages.map((p) => ({
+    n: p.n,
+    lines: p.lines.filter((l) => !/^page\s+\d+\s+of\s+\d+/i.test(l) && seen.get(key(l)) <= limit),
+  }));
 }
 
 function summarise(pages) {
@@ -90,7 +104,7 @@ export async function extractPdf(pdfjsLib, data, fileName, onProgress) {
     for (const it of items) if (!samples.has(it.fontName)) samples.set(it.fontName, [it.str]);
   });
   const plan = planFonts(samples);
-  const pages = rawPages.map((items, i) => ({ n: i + 1, lines: buildLines(items, plan) }));
+  const pages = stripRunningHeads(rawPages.map((items, i) => ({ n: i + 1, lines: buildLines(items, plan) })));
   await doc.destroy();
   if (onProgress) onProgress(1);
   const stats = summarise(pages);

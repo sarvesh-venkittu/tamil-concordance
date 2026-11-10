@@ -29,9 +29,9 @@
         <ul id="suggest" class="suggest" role="listbox" hidden></ul>
       </div>
       <div class="segmented" id="modes" role="radiogroup" aria-label="Match">
-        <button data-mode="starts" class="active" title="Words that begin with what you typed">Starts with</button>
-        <button data-mode="word" title="Only this exact word">Whole word</button>
-        <button data-mode="anywhere" title="Anywhere inside a word">Anywhere</button>
+        <button data-mode="exact" title="Only this exact word">Exact word<span class="n"></span></button>
+        <button data-mode="infl" class="active" title="Also words that begin with it: நிலம் finds நிலத்தில், அரசு finds அரசன்">+ Inflected forms<span class="n"></span></button>
+        <button data-mode="all" title="Also where it is joined inside a longer word, as often happens in verse">+ Inside compounds<span class="n"></span></button>
       </div>
     </div>
     <p class="hint" id="hint">Type in English and pick the Tamil word: <kbd>Space</kbd> takes the first choice, <kbd>↑</kbd><kbd>↓</kbd> or a number to choose another, <kbd>Esc</kbd> keeps the English letters.</p>
@@ -47,6 +47,7 @@
           <p>Start typing to search every book in your library.</p>
         </div>
         <div id="summary" class="summary" hidden></div>
+        <div id="bars" class="bars" hidden></div>
         <div id="forms" class="forms" hidden></div>
         <div id="hitList"></div>
       </div>

@@ -11,8 +11,9 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "dist:mac": "electron-builder --mac --universal",
-    "dist:win": "electron-builder --win --x64"
+    "dist:mac": "electron-builder --mac --arm64 --x64",
+    "dist:win": "electron-builder --win --x64",
+    "dist:mac-universal": "electron-builder --mac --universal"
   },
   "dependencies": {
     "pdfjs-dist": "4.10.38"
@@ -25,7 +26,10 @@
     "appId": "io.github.sarvesh-venkittu.tamilconcordance",
     "productName": "Tamil Concordance",
     "asar": false,
-    "directories": { "output": "dist", "buildResources": "build" },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
     "files": [
       "app/**/*",
       "package.json",
@@ -37,13 +41,30 @@
     ],
     "mac": {
       "category": "public.app-category.reference",
-      "target": [{ "target": "dmg" }],
+      "target": [
+        {
+          "target": "dmg"
+        }
+      ],
       "icon": "build/icon.icns",
       "identity": "-",
       "hardenedRuntime": false
     },
-    "dmg": { "title": "Tamil Concordance" },
-    "win": { "target": [{ "target": "nsis" }], "icon": "build/icon.png" },
-    "nsis": { "oneClick": true, "perMachine": false }
+    "dmg": {
+      "title": "Tamil Concordance",
+      "artifactName": "Tamil-Concordance-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis"
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
   }
 }

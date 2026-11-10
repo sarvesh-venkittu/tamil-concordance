@@ -39,7 +39,13 @@ correct Unicode). Correct Unicode PDFs are left untouched.
 - turns `ா` + `ி/ீ` into `ரி/ரீ` (the ரி ligature is exported as those two signs),
 - moves each prefix vowel sign ெ ே ை after its consonant (including க்ஷ),
 - joins the two-part vowels: ெ…ா → ொ, ே…ா → ோ, ெ…ௗ → ௌ,
-- glues a vowel sign back onto the letter before it when a stray space separates them.
+- glues a vowel sign back onto the letter before it when a stray space separates them,
+- repairs pairs that can't occur in real text: ா் → ர் and ு+ா → ூ (how some fonts draw தூ, நூ).
+
+The decoders were checked against the four hand-checked texts of the original web version. Word
+agreement is 98–99% for Nalayiram and Thiruvenkata Satakam. The remaining differences are mostly
+OCR errors in the old texts (e.g. ௨ for உ) or its reading of TSCII byte 0xAD as a hyphen
+instead of இ.
 
 Some PDFs also fake bold text by printing the same run 2–4 times. Identical runs at the same
 position are dropped, and a run that is one string repeated is collapsed.
@@ -79,9 +85,22 @@ When online, the main process also asks Google Input Tools (`inputtools.google.c
 
 ## Search
 
-`Corpus` keeps every line in memory, which is a few MB for dozens of books. A search scans all lines
-with `indexOf` and checks the word boundary (Tamil letters on either side) for the selected mode.
-For each hit it also records the whole word it sits in; those words make the word-form chips.
+`Corpus` (`app/renderer/search.js`) keeps every line in memory, which is a few MB for dozens of books.
+The matching rules come from the original web version of this concordance:
+
+- `buildVariants(q)` makes stems from the query. Words ending in ம் also search for the stem without
+  it (நிலம் → நில, for நிலத்தில்). Words ending in ு also search for the stem, plus the stem with a
+  doubled consonant for கசடதபற (அரசு → அரச, அரச்ச; நாடு → நாட, நாட்ட).
+- `matchLine()` scores each Tamil word in a line. Level **3** is the exact word. Level **2** is a
+  word starting with the query or a stem. Level **1** is the query or a stem found inside a longer
+  word. If the query ends in a bare consonant (கண்), the next letter must not be a vowel sign, so
+  கண் finds கண்டு but not கணம்.
+- Each line keeps its best level. The three buttons show cumulative counts (3; 3+2; 3+2+1).
+
+Verse numbers are taken from the number Project Madurai prints at the end of each verse; every
+line up to that point gets that number. Running headers and footers (any line repeated on more than
+a third of the pages, and "Page N of M" lines) are removed during extraction.
+
 A sorted word list with counts powers the "N in your books" numbers in the suggestion dropdown.
 
 ## Storage

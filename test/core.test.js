@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { planFonts, decodeRun, fixLine, collapseRepeats } from '../app/lib/tamilfix.js';
 import { extractHtmlOrText } from '../app/lib/extract.js';
 import { suggest } from '../app/renderer/translit.js';
-import { Corpus } from '../app/renderer/search.js';
+import { Corpus, buildVariants } from '../app/renderer/search.js';
 
 // Helper: decode one string the way the extractor does for a whole document.
 function decode(str, sample = [str]) {
@@ -60,13 +60,25 @@ test('transliteration prefers words found in the library', () => {
   assert.equal(suggest('vanakkam', lookup)[0], 'வணக்கம்');
 });
 
-test('search modes: starts with, whole word, anywhere', () => {
+test('match levels: exact word, inflected form, inside compound', () => {
   const c = new Corpus();
-  c.add({ id: 'k', title: 'குறள்' }, [{ n: 1, lines: ['அறத்தான் வருவதே இன்பம்', 'அறம் பொருள் இன்பம்', 'மறம் அறம்'] }]);
-  assert.equal(c.search('அற', 'starts').hits.length, 3);
-  assert.equal(c.search('அறம்', 'word').hits.length, 2);
-  assert.equal(c.search('றம்', 'anywhere').hits.length, 3);
-  assert.equal(c.search('றம்', 'starts').hits.length, 0);
-  assert.deepEqual([...c.search('அற', 'starts').forms.keys()].sort(), ['அறத்தான்', 'அறம்']);
-  assert.deepEqual(c.lookup('அறம்'), { exact: 2, prefix: 2 });
+  c.add({ id: 'k', title: 'test' }, [{ n: 1, lines: [
+    'அறத்தான் வருவதே இன்பம்', // inflected (அறம் → அற + த்தான்)
+    'அறம் பொருள் இன்பம் 12',   // exact; ends verse 12
+    'செந்தாமரைக் கணம் கண்டு',  // கணம் must not match கண்
+  ] }]);
+  const r = c.search('அறம்');
+  assert.deepEqual(r.hits.map((h) => h.level), [2, 3]);
+  assert.deepEqual(r.totals, { 1: 0, 2: 1, 3: 1 });
+  assert.equal(c.search('தாமரை').hits[0].level, 1); // inside the compound செந்தாமரைக்
+  assert.equal(r.hits[1].no, '12');
+  const k = c.search('கண்');
+  assert.deepEqual(k.hits.map((h) => h.forms.map(([f]) => f)), [['கண்டு']]);
+  assert.equal(c.search('abc').error, 'notamil');
+  assert.deepEqual(c.lookup('அறம்'), { exact: 1, prefix: 1 });
+});
+
+test('stem variants for -ு and -ம் endings', () => {
+  assert.deepEqual(buildVariants('அரசு').map((v) => v.s), ['அரசு', 'அரச', 'அரச்ச']);
+  assert.deepEqual(buildVariants('நிலம்').map((v) => v.s), ['நிலம்', 'நில']);
 });

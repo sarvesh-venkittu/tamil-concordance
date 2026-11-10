@@ -6,7 +6,9 @@ This guide is for anyone using the app, with no computer experience needed.
 
 ## 1. Install it (one time only)
 
-1. Open the file **Tamil Concordance…dmg** that you were sent or downloaded.
+1. Open the file **Tamil-Concordance…dmg** that you were sent or downloaded. There are two versions:
+   *arm64* for newer Macs with an Apple chip (M1, M2, M3…) and *x64* for older Intel Macs.
+   ( menu → About This Mac shows which one you have.)
 2. A window opens. **Drag the red அ icon onto the Applications folder.**
 3. Open **Applications** and double-click **Tamil Concordance**.
 4. The first time, the Mac will say it can't check the app. This is normal for apps that aren't
@@ -67,9 +69,14 @@ Spelling help for English letters:
 
 **Choices next to the search box**
 
-- **Starts with**: finds the word with any ending (அறம், அறத்தை, அறத்தான்…). This is usually best.
-- **Whole word**: only that exact word.
-- **Anywhere**: the letters can be anywhere inside a word.
+- **Exact word**: only that exact word.
+- **+ Inflected forms**: also the word with endings (அரசு → அரசன், அரசர்க்கு; நிலம் → நிலத்தில்).
+  This is usually best.
+- **+ Inside compounds**: also where the word is joined inside a longer word, as often happens in
+  old verse (தாமரை inside செந்தாமரைக்).
+
+The number on each button tells you how many lines it finds. Under each line, a small label
+says which kind of match it is. The bars at the top show how many times the word appears in each book.
 
 The small "chips" above the results list each different form of the word. Click one to see only
 that form, and click it again to see all forms.

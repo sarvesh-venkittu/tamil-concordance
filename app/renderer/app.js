@@ -7,7 +7,7 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 
 const corpus = new Corpus();
 let library = [];
-let settings = { scale: 1, google: true, translit: true, mode: 'starts' };
+let settings = { scale: 1, google: true, translit: true, mode: 'infl' };
 const selected = new Set(); // book ids included in search
 let activeForm = null;
 let lastResult = null;
@@ -20,6 +20,7 @@ async function init() {
   applyScale();
   $('#googleToggle').checked = settings.google;
   setTranslit(settings.translit);
+  if (!['exact', 'infl', 'all'].includes(settings.mode)) settings.mode = 'infl';
   setMode(settings.mode);
 
   library = await api.listLibrary();
@@ -220,38 +221,55 @@ function setMode(m) {
   document.querySelectorAll('#modes button').forEach((b) => b.classList.toggle('active', b.dataset.mode === m));
 }
 document.querySelectorAll('#modes button').forEach((b) => b.addEventListener('click', () => {
-  setMode(b.dataset.mode); saveSettings(); runSearch(); q.focus();
+  setMode(b.dataset.mode); saveSettings(); activeForm = null; renderFilter(); renderResults(); q.focus();
 }));
 
 let searchTimer;
 function scheduleSearch() { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 220); }
 
-function currentQuery() {
-  // search for the last Tamil word typed (multi-word phrases also work)
-  return q.value.trim();
-}
+const LEVEL = { exact: 3, infl: 2, all: 1 };
+const LEVEL_TAG = { 3: ['l3', 'exact word'], 2: ['l2', 'inflected form'], 1: ['l1', 'inside compound'] };
 
 function runSearch() {
   clearTimeout(searchTimer);
-  const text = currentQuery();
   activeForm = null;
   shownLimit = 300;
-  if (!text || !/[஀-௿]/.test(text)) {
-    lastResult = null;
-    renderResults();
-    renderFilter();
-    return;
-  }
-  lastResult = { query: text, ...corpus.search(text, settings.mode, null) };
+  const r = corpus.search(q.value);
+  lastResult = r.error ? null : r;
+  lastError = r.error || null;
+  renderModeCounts();
   renderFilter();
   renderResults();
+}
+let lastError = null;
+
+function renderModeCounts() {
+  const t = lastResult ? lastResult.totals : null;
+  const counts = t ? { exact: t[3], infl: t[3] + t[2], all: t[3] + t[2] + t[1] } : {};
+  document.querySelectorAll('#modes button').forEach((b) => {
+    b.querySelector('.n').textContent = t ? counts[b.dataset.mode].toLocaleString() : '';
+  });
+}
+
+// Hits visible under the current match level, book selection and word-form filter.
+function visibleHits() {
+  if (!lastResult) return [];
+  const th = LEVEL[settings.mode];
+  return lastResult.hits.filter((h) => h.level >= th && selected.has(h.workId) &&
+    (!activeForm || h.forms.some(([f, l]) => f === activeForm && l >= th)));
 }
 
 function renderFilter() {
   const list = $('#filterList');
   list.innerHTML = '';
   const counts = new Map();
-  if (lastResult) for (const h of lastResult.hits) if (!activeForm || h.form === activeForm) counts.set(h.workId, (counts.get(h.workId) || 0) + 1);
+  if (lastResult) {
+    const th = LEVEL[settings.mode];
+    for (const h of lastResult.hits) {
+      if (h.level < th || (activeForm && !h.forms.some(([f]) => f === activeForm))) continue;
+      counts.set(h.workId, (counts.get(h.workId) || 0) + 1);
+    }
+  }
   if (!library.length) { list.appendChild(el('li', 'muted', 'No books yet.')); return; }
 
   const allLi = el('li', 'all');
@@ -280,40 +298,71 @@ function renderFilter() {
   }
 }
 
-function highlight(text, start, end) {
+function highlight(text, ranges) {
+  const merged = [];
+  for (const r of ranges.slice().sort((x, y) => x[0] - y[0])) {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([r[0], r[1]]);
+  }
   const frag = document.createDocumentFragment();
-  frag.append(text.slice(0, start));
-  frag.appendChild(el('mark', null, text.slice(start, end)));
-  frag.append(text.slice(end));
+  let p = 0;
+  for (const [s0, e0] of merged) {
+    frag.append(text.slice(p, s0));
+    frag.appendChild(el('mark', null, text.slice(s0, e0)));
+    p = e0;
+  }
+  frag.append(text.slice(p));
   return frag;
 }
 
 function renderResults() {
   const list = $('#hitList');
   list.innerHTML = '';
-  const summary = $('#summary'), forms = $('#forms');
+  const summary = $('#summary'), forms = $('#forms'), bars = $('#bars');
   $('#searchPlaceholder').hidden = !!lastResult;
   if (!lastResult) {
-    summary.hidden = true; forms.hidden = true;
+    summary.hidden = true; forms.hidden = true; bars.hidden = true;
     const ph = $('#searchPlaceholder p');
-    ph.textContent = library.length ? 'Start typing to search every book in your library.' : 'Add some books in “My Books” to begin.';
+    ph.textContent = !library.length ? 'Add some books in “My Books” to begin.'
+      : lastError === 'notamil' ? 'Pick a Tamil word from the list, or turn on English-to-Tamil typing with the அ button.'
+      : lastError === 'short' ? 'Type at least two Tamil letters.'
+      : 'Start typing to search every book in your library.';
     return;
   }
-  const hits = lastResult.hits.filter((h) => selected.has(h.workId) && (!activeForm || h.form === activeForm));
-  const books = new Set(hits.map((h) => h.workId));
+  const th = LEVEL[settings.mode];
+  const hits = visibleHits();
+  const perBook = library.map((w) => ({ w, n: hits.filter((h) => h.workId === w.id).length })).filter((x) => selected.has(x.w.id));
+  const books = perBook.filter((x) => x.n).length;
   summary.hidden = false;
   summary.innerHTML = '';
   if (!hits.length) {
-    summary.append('No matches for ', el('b', null, lastResult.query), '. Try “Anywhere”, or a shorter part of the word.');
+    summary.append('No lines found for ', el('b', null, lastResult.query), settings.mode !== 'all' ? '. Try “+ Inside compounds”, or a shorter part of the word.' : '. Try a shorter part of the word.');
   } else {
-    summary.append(el('b', null, hits.length.toLocaleString()), ` place${hits.length === 1 ? '' : 's'} in `, el('b', null, String(books.size)), ` book${books.size === 1 ? '' : 's'}`);
+    summary.append(el('b', null, hits.length.toLocaleString()), ` line${hits.length === 1 ? '' : 's'} for `, el('b', null, lastResult.query), ` in ${books} of ${perBook.length} book${perBook.length === 1 ? '' : 's'}`);
     if (activeForm) summary.append(' — showing only ', el('b', null, activeForm));
+  }
+
+  // per-book bars
+  bars.innerHTML = '';
+  bars.hidden = !hits.length || perBook.length < 2;
+  const max = Math.max(1, ...perBook.map((x) => x.n));
+  for (const { w, n } of perBook) {
+    const row = el('div', 'bar');
+    const nm = el('div', 'nm', w.title); nm.title = w.title;
+    const track = el('div', 'track'); const fill = el('div', 'fill'); fill.style.width = (n / max * 100) + '%'; track.appendChild(fill);
+    const per = w.lines ? Math.round(n / w.lines * 10000) / 10 : 0;
+    const ct = el('div', 'ct', n.toLocaleString()); ct.appendChild(el('small', null, `${per} per 1,000 lines`));
+    row.append(nm, track, ct);
+    bars.appendChild(row);
   }
 
   // word forms
   forms.innerHTML = '';
   const formCounts = new Map();
-  for (const h of lastResult.hits) if (selected.has(h.workId)) formCounts.set(h.form, (formCounts.get(h.form) || 0) + 1);
+  for (const h of lastResult.hits) {
+    if (!selected.has(h.workId) || h.level < th) continue;
+    for (const [f, l] of h.forms) if (l >= th) formCounts.set(f, (formCounts.get(f) || 0) + 1);
+  }
   const sorted = [...formCounts].sort((a, b) => b[1] - a[1]);
   forms.hidden = sorted.length < 2 && !activeForm;
   const limit = forms.dataset.expanded ? sorted.length : 24;
@@ -330,24 +379,31 @@ function renderResults() {
     forms.appendChild(more);
   }
 
-  // grouped hits
+  // grouped hits: best matches first within each book, then in reading order
   let shown = 0;
   for (const w of library) {
     if (shown >= shownLimit) break;
-    const wh = hits.filter((h) => h.workId === w.id);
+    const wh = hits.filter((h) => h.workId === w.id).sort((a, b) => b.level - a.level || a.index - b.index);
     if (!wh.length) continue;
     const g = el('div', 'group');
     const head = el('button', 'group-head');
-    head.append(el('span', 'chev', '▾'), el('span', 'title', w.title), el('span', 'count', `${wh.length.toLocaleString()} place${wh.length === 1 ? '' : 's'}`));
+    head.append(el('span', 'chev', '▾'), el('span', 'title', w.title), el('span', 'count', `${wh.length.toLocaleString()} line${wh.length === 1 ? '' : 's'}`));
     head.addEventListener('click', () => g.classList.toggle('collapsed'));
     const ul = el('ul', 'hits');
     for (const h of wh) {
       if (shown >= shownLimit) break;
       shown++;
       const li = el('li', 'hit');
-      li.append(el('span', 'pg', `page ${h.page}`));
-      const tx = el('span', 'tx'); tx.appendChild(highlight(h.text, h.start, h.end));
-      li.appendChild(tx);
+      const ref = el('span', 'pg');
+      ref.appendChild(el('b', null, `p. ${h.page}`));
+      if (h.no) ref.appendChild(el('span', null, `no. ${h.no}`));
+      const body = el('div', 'tx-wrap');
+      const tx = el('div', 'tx'); tx.appendChild(highlight(h.text, h.ranges));
+      const tags = el('div', 'tags');
+      const [cls, label] = LEVEL_TAG[h.level];
+      tags.appendChild(el('span', 'tag ' + cls, label));
+      body.append(tx, tags);
+      li.append(ref, body);
       li.title = 'Click to see the surrounding lines';
       li.addEventListener('click', () => toggleContext(li, h));
       ul.appendChild(li);
@@ -368,11 +424,11 @@ function toggleContext(li, h) {
   const box = el('li', 'ctx');
   for (const line of corpus.context(h.workId, h.index, 3)) {
     const d = el('div', line.current ? 'cur' : '');
-    if (line.current) d.appendChild(highlight(line.text, h.start, h.end)); else d.textContent = line.text;
+    if (line.current) d.appendChild(highlight(line.text, h.ranges)); else d.textContent = line.text;
     box.appendChild(d);
   }
   const w = library.find((x) => x.id === h.workId);
-  const foot = el('div', 'pgline', `${w ? w.title : ''} · page ${h.page}  `);
+  const foot = el('div', 'pgline', `${w ? w.title : ''} · page ${h.page}${h.no ? ` · no. ${h.no}` : ''}  `);
   const open = el('button', 'btn link inline', 'Open the PDF');
   open.addEventListener('click', (e) => { e.stopPropagation(); api.openOriginal(h.workId); });
   foot.appendChild(open);

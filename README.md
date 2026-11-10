@@ -16,9 +16,11 @@ Each person's copy holds their own library, so it only searches the books they'v
   spellings. Each suggestion shows how often it appears in *your* books, and words from your books
   rank higher. Google's suggestions are added when you're online. Without internet, the app's own
   transliterator still works.
-- **Concordance search.** Choose *Starts with* (finds அறம், அறத்தான், அறத்தை…), *Whole word* or
-  *Anywhere*. Results are grouped by book with page numbers. A chip row lists every word form found,
-  with counts. Click a line to see the lines around it, or open the original PDF.
+- **Concordance search.** Three match levels, each with its count: *Exact word*; *+ Inflected forms*
+  (அரசு also finds அரசன், அரசர்க்கு; நிலம் finds நிலத்தில்); and *+ Inside compounds* (தாமரை in
+  செந்தாமரைக்). Bars show how often the word occurs in each book. A row of chips lists every word form
+  found, with counts. Results are grouped by book with page and verse numbers ("p. 72 · no. 13").
+  Click a line to see the lines around it, or open the original PDF.
 - **Handles every Project Madurai PDF style tested:** old TSCII-font PDFs (Windows- or Mac-made)
   and newer "Unicode" PDFs whose text layer is scrambled. See [How it works](docs/HOW_IT_WORKS.md).
   Project Madurai's Unicode **HTML** pages can be added too.
@@ -31,9 +33,10 @@ Each person's copy holds their own library, so it only searches the books they'v
 
 ## Download & install (Mac)
 
-1. Download **`Tamil Concordance-<version>-universal.dmg`** from the
-   [latest release](https://github.com/sarvesh-venkittu/tamil-concordance/releases/latest).
-   It runs on both Apple-silicon and Intel Macs.
+1. From the [latest release](https://github.com/sarvesh-venkittu/tamil-concordance/releases/latest),
+   download the right file for the Mac. To check which one it is, open  menu → **About This Mac**:
+   - **Chip: Apple M1/M2/M3/M4…** → `Tamil-Concordance-<version>-arm64.dmg`
+   - **Processor: Intel…** → `Tamil-Concordance-<version>-x64.dmg`
 2. Open the `.dmg` and drag **Tamil Concordance** into **Applications**.
 3. The first time only: the app isn't from the App Store, so macOS will warn you.
    - **macOS 15 (Sequoia) or newer:** open the app once and click **Done** on the warning. Then go to
@@ -64,6 +67,13 @@ After that it opens normally. There is a simple step-by-step guide for non-techn
 Capital letters spell out the harder sounds: `L` ள, `N` ண, `R` ற, `zh` ழ, `A`/`aa` ஆ, `I`/`ee` ஈ,
 `U`/`oo` ஊ, `E` ஏ, `O` ஓ.
 
+## History
+
+This started as a single-page web concordance of four texts (Nalayira Divya Prabandham,
+Silappathikaram, Avvaiyar and Thiruvenkata Satakam). This app keeps that version's matching
+rules and look. It adds a personal library you can add PDFs to, decoders for Project Madurai PDFs,
+and English-letters typing. The four texts from the web version served as a check on the decoders.
+
 ## Privacy
 
 Your books and searches stay on your computer. The library is kept in
@@ -81,7 +91,8 @@ cd tamil-concordance
 npm install
 npm start            # run the app
 npm test             # unit tests (decoding, transliteration, search)
-npm run dist:mac     # build dist/Tamil Concordance-<version>-universal.dmg
+npm run dist:mac     # build dist/Tamil-Concordance-<version>-arm64.dmg and -x64.dmg
+npm run dist:mac-universal   # one DMG for both (needs Xcode Command Line Tools for lipo)
 npm run dist:win     # build a Windows installer (untested)
 ```
 
