@@ -32,6 +32,10 @@ email or AirDrop):
 
 4. Open the app again.
 
+If Terminal answers **Operation not permitted**, macOS is protecting the Applications folder from
+Terminal. Allow it once: **System Settings → Privacy & Security → App Management**, switch on
+**Terminal**, quit and reopen Terminal, then paste the line again.
+
 This removes the "downloaded from the internet" flag that macOS puts on apps that aren't from the
 App Store. It only affects this one app.
 
