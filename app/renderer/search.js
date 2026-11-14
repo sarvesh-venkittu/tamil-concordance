@@ -27,11 +27,63 @@ export function buildVariants(q) {
     const c = ch[ch.length - 2];
     if ('கசடதபற'.includes(c)) out.push({ s: stem + '்' + c, guard: false });
   }
+  // A final ் drops before a vowel ending: மலர் → மலரை, மாமலரே; நிலம் → நிலமே.
+  // Short words like கண், பல் double instead (கண்ணை), which the query itself already matches.
+  if (last === '்' && !isShortSyllable(ch.slice(0, -2))) {
+    out.push({ s: ch.slice(0, -1).join(''), needSign: true });
+  }
   const seen = new Set();
   return out.filter((v) => [...v.s].length >= 2 && !seen.has(v.s) && seen.add(v.s));
 }
 
+const SHORT_VOWELS = 'அஇஉஎஒ';
+const SHORT_SIGNS = 'ிுெொ';
+function isShortSyllable(ch) {
+  if (ch.length === 1) return SHORT_VOWELS.includes(ch[0]) || isCons(ch[0]);
+  return ch.length === 2 && isCons(ch[0]) && SHORT_SIGNS.includes(ch[1]);
+}
+
+// A word that starts with a vowel loses it when joined to the word before:
+// பேர் + அரசு → பேரரசு, இளங்கோ + அடிகள் → இளங்கோவடிகள், திரு + இளை → திருவிளை.
+// The vowel reappears as a consonant (+ its vowel sign) followed by the rest of the word.
+const VOWEL_SIGN_OF = { அ: '', ஆ: 'ா', இ: 'ி', ஈ: 'ீ', உ: 'ு', ஊ: 'ூ', எ: 'ெ', ஏ: 'ே', ஐ: 'ை', ஒ: 'ொ', ஓ: 'ோ', ஔ: 'ௌ' };
+// Only the whole word (and its form without a final ்) is used: shortened stems like அன்ப or
+// உள்ள are too short and would match unrelated words (பயன்படும், அங்குள்ள).
+function mergedVariants(q, vs) {
+  const out = [];
+  for (const v of vs.filter((x) => x.s === q || x.needSign)) {
+    const ch = [...v.s];
+    const sign = VOWEL_SIGN_OF[ch[0]];
+    const rest = ch.slice(1).join('');
+    // a bare அ leaves only a consonant behind, so ask for a longer rest to avoid noise
+    if (sign === undefined || [...rest].length < (sign ? 2 : 3)) continue;
+    out.push({ ...v, s: rest, sign });
+  }
+  return out;
+}
+
+const VOWEL_SIGN = /[ா-ௌௗ]/;
+// Does variant v's ending allow the letter that follows it in the word?
+function endOk(v, nxt) {
+  if (v.guard && nxt && VSIGN.test(nxt)) return false;
+  if (v.needSign && !(nxt && VOWEL_SIGN.test(nxt))) return false;
+  return true;
+}
+
+// Find v inside tok (not at its start). Returns [start, end] of the highlight, or null.
+function findInside(tok, v) {
+  for (let i = tok.indexOf(v.s, 1); i > 0; i = tok.indexOf(v.s, i + 1)) {
+    if (!endOk(v, tok[i + v.s.length])) continue;
+    if (v.sign === undefined) return [i, i + v.s.length];
+    // merged vowel: the letters before must be consonant (+ the vowel's sign)
+    const c = v.sign ? i - 2 : i - 1;
+    if (c >= 1 && isCons(tok[c]) && (!v.sign || tok[i - 1] === v.sign)) return [c, i + v.s.length];
+  }
+  return null;
+}
+
 export function matchLine(s, q, vs) {
+  const merged = mergedVariants(q, vs);
   let level = 0;
   const ranges = [];
   const forms = [];
@@ -40,18 +92,14 @@ export function matchLine(s, q, vs) {
     if (tok === q) { level = Math.max(level, 3); ranges.push([off, off + tok.length]); forms.push([tok, 3]); continue; }
     let hit = false;
     for (const v of vs) {
-      if (tok.startsWith(v.s) && tok.length > v.s.length && !(v.guard && VSIGN.test(tok[v.s.length]))) {
+      if (tok.startsWith(v.s) && tok.length > v.s.length && endOk(v, tok[v.s.length])) {
         level = Math.max(level, 2); ranges.push([off, off + tok.length]); forms.push([tok, 2]); hit = true; break;
       }
     }
     if (hit) continue;
-    for (const v of vs) {
-      const i = tok.indexOf(v.s, 1);
-      if (i > 0) {
-        const nxt = tok[i + v.s.length];
-        if (v.guard && nxt && VSIGN.test(nxt)) continue;
-        level = Math.max(level, 1); ranges.push([off + i, off + i + v.s.length]); forms.push([tok, 1]); break;
-      }
+    for (const v of [...vs, ...merged]) {
+      const r = findInside(tok, v);
+      if (r) { level = Math.max(level, 1); ranges.push([off + r[0], off + r[1]]); forms.push([tok, 1]); break; }
     }
   }
   return { level, ranges, forms };

@@ -18,7 +18,7 @@ Each person's copy holds their own library, so it only searches the books they'v
   transliterator still works.
 - **Concordance search.** Three match levels, each with its count: *Exact word*; *+ Inflected forms*
   (அரசு also finds அரசன், அரசர்க்கு; நிலம் finds நிலத்தில்); and *+ Inside compounds* (தாமரை in
-  செந்தாமரைக்). Bars show how often the word occurs in each book. A row of chips lists every word form
+  செந்தாமரைக், and even where the spelling changes at the join: அரசு in திருநாவுக்கரசு, மலர் in நறுமலரே). Bars show how often the word occurs in each book. A row of chips lists every word form
   found, with counts. Results are grouped by book with page and verse numbers ("p. 72 · no. 13").
   Click a line to see the lines around it, or open the original PDF.
 - **Handles every Project Madurai PDF style tested:** old TSCII-font PDFs (Windows- or Mac-made)

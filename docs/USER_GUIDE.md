@@ -93,7 +93,7 @@ Spelling help for English letters:
 - **+ Inflected forms**: also the word with endings (அரசு → அரசன், அரசர்க்கு; நிலம் → நிலத்தில்).
   This is usually best.
 - **+ Inside compounds**: also where the word is joined inside a longer word, as often happens in
-  old verse (தாமரை inside செந்தாமரைக்).
+  old verse (தாமரை inside செந்தாமரைக், அரசு inside திருநாவுக்கரசு, உலகம் inside விண்ணுலகம்).
 
 The number on each button tells you how many lines it finds. Under each line, a small label
 says which kind of match it is. The bars at the top show how many times the word appears in each book.

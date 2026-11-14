@@ -78,7 +78,32 @@ test('match levels: exact word, inflected form, inside compound', () => {
   assert.deepEqual(c.lookup('அறம்'), { exact: 1, prefix: 1 });
 });
 
+test('words inside words where the spelling changes at the join', () => {
+  const c = new Corpus();
+  c.add({ id: 'j', title: 'test' }, [{ n: 1, lines: [
+    'பேரரசு ஆண்ட',     // பேர் + அரசு: the அ merges into ர
+    'இளங்கோவடிகள்',    // இளங்கோ + அடிகள்: அ merges into the glide வ
+    'மாமலரே மலரை',     // மலர் loses its ் before a vowel ending
+    'திருவிளையாடல்',   // திரு + இளை…: இ merges as வி
+    'கணம் பல்லவன்',    // must NOT match கண் or பல்
+  ] }]);
+  const levelOf = (q) => c.search(q).hits.map((h) => [h.text, h.level]);
+  assert.deepEqual(levelOf('அரசு'), [['பேரரசு ஆண்ட', 1]]);
+  assert.deepEqual(levelOf('அடிகள்'), [['இளங்கோவடிகள்', 1]]);
+  assert.deepEqual(levelOf('மலர்'), [['மாமலரே மலரை', 2]]); // மலரை inflected, மாமலரே inside
+  assert.deepEqual(c.search('மலர்').hits[0].forms.map(([f]) => f).sort(), ['மலரை', 'மாமலரே']);
+  assert.deepEqual(levelOf('இளை'), [['திருவிளையாடல்', 1]]);
+  assert.deepEqual(levelOf('கண்'), []);
+  // shortened stems don't take part in vowel merging: அன்பு must not find பயன்படும்
+  c.add({ id: 'n', title: 'noise' }, [{ n: 1, lines: ['பயன்படும் அதன்படி', 'நாட்டன்பு'] }]);
+  assert.deepEqual(levelOf('அன்பு'), [['நாட்டன்பு', 1]]);
+  // the highlight covers the merged letter too: ரரசு in பேரரசு
+  const h = c.search('அரசு').hits[0];
+  assert.equal(h.text.slice(...h.ranges[0]), 'ரரசு');
+});
+
 test('stem variants for -ு and -ம் endings', () => {
   assert.deepEqual(buildVariants('அரசு').map((v) => v.s), ['அரசு', 'அரச', 'அரச்ச']);
-  assert.deepEqual(buildVariants('நிலம்').map((v) => v.s), ['நிலம்', 'நில']);
+  assert.deepEqual(buildVariants('நிலம்').map((v) => v.s), ['நிலம்', 'நில', 'நிலம']); // நிலம finds நிலமே
+  assert.deepEqual(buildVariants('கண்').map((v) => v.s), ['கண்']); // short: doubles (கண்ணை)
 });

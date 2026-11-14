@@ -1,7 +1,7 @@
 {
   "name": "tamil-concordance",
   "productName": "Tamil Concordance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A personal Tamil concordance for Project Madurai books. Add the PDFs you have, then search every word, typing in English letters if you like.",
   "main": "app/main.js",
   "type": "module",

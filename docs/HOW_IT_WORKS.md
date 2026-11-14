@@ -95,6 +95,13 @@ The matching rules come from the original web version of this concordance:
   word starting with the query or a stem. Level **1** is the query or a stem found inside a longer
   word. If the query ends in a bare consonant (கண்), the next letter must not be a vowel sign, so
   கண் finds கண்டு but not கணம்.
+- Inside compounds, the spelling often changes at the join, and level 1 allows for that:
+  - a word starting with a vowel loses it and takes the previous consonant instead
+    (பேர் + அரசு → பேரரசு, இளங்கோ + அடிகள் → இளங்கோவடிகள், திரு + இளை → திருவிளை), so the
+    rest of the word is searched after a consonant (+ that vowel's sign). This only uses the whole
+    word, not shortened stems, which would be too short to be distinctive.
+  - a final ் drops before a vowel ending (மலர் → மலரை, மாமலரே; நிலம் → நிலமே). Short words
+    such as கண், பல் double their consonant instead (கண்ணை), so they don't get this variant.
 - Each line keeps its best level. The three buttons show cumulative counts (3; 3+2; 3+2+1).
 
 Verse numbers are taken from the number Project Madurai prints at the end of each verse; every
