@@ -100,6 +100,11 @@ test('words inside words where the spelling changes at the join', () => {
   // the highlight covers the merged letter too: ரரசு in பேரரசு
   const h = c.search('அரசு').hits[0];
   assert.equal(h.text.slice(...h.ranges[0]), 'ரரசு');
+  // a word repeated inside one word gets every occurrence marked
+  c.add({ id: 'r', title: 'repeat' }, [{ n: 1, lines: ['சுடர்ச்சுடரும் விளக்கு'] }]);
+  const r = c.search('சுடர்').hits.find((x) => x.workId === 'r');
+  assert.equal(r.level, 2);
+  assert.deepEqual(r.ranges.map((x) => r.text.slice(...x)), ['சுடர்', 'சுடர']);
 });
 
 test('stem variants for -ு and -ம் endings', () => {

@@ -70,16 +70,28 @@ function endOk(v, nxt) {
   return true;
 }
 
-// Find v inside tok (not at its start). Returns [start, end] of the highlight, or null.
-function findInside(tok, v) {
-  for (let i = tok.indexOf(v.s, 1); i > 0; i = tok.indexOf(v.s, i + 1)) {
+// Every place v occurs inside tok at or after `from` (not at the word's start).
+// Returns [start, end] highlight ranges.
+function findInside(tok, v, from = 1) {
+  const out = [];
+  for (let i = tok.indexOf(v.s, Math.max(1, from)); i > 0; i = tok.indexOf(v.s, i + 1)) {
     if (!endOk(v, tok[i + v.s.length])) continue;
-    if (v.sign === undefined) return [i, i + v.s.length];
+    if (v.sign === undefined) { out.push([i, i + v.s.length]); continue; }
     // merged vowel: the letters before must be consonant (+ the vowel's sign)
     const c = v.sign ? i - 2 : i - 1;
-    if (c >= 1 && isCons(tok[c]) && (!v.sign || tok[i - 1] === v.sign)) return [c, i + v.s.length];
+    if (c >= from && c >= 1 && isCons(tok[c]) && (!v.sign || tok[i - 1] === v.sign)) out.push([c, i + v.s.length]);
   }
-  return null;
+  return out;
+}
+
+// All inner occurrences of the query (any variant) from `from` on, without overlaps.
+function innerRanges(tok, vs, merged, from) {
+  const all = [];
+  for (const v of [...vs, ...merged]) all.push(...findInside(tok, v, from));
+  all.sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+  const out = [];
+  for (const r of all) if (!out.length || r[0] >= out[out.length - 1][1]) out.push(r);
+  return out;
 }
 
 export function matchLine(s, q, vs) {
@@ -90,16 +102,18 @@ export function matchLine(s, q, vs) {
   for (const m of s.matchAll(TAMIL_RUN)) {
     const tok = m[0], off = m.index;
     if (tok === q) { level = Math.max(level, 3); ranges.push([off, off + tok.length]); forms.push([tok, 3]); continue; }
-    let hit = false;
-    for (const v of vs) {
-      if (tok.startsWith(v.s) && tok.length > v.s.length && endOk(v, tok[v.s.length])) {
-        level = Math.max(level, 2); ranges.push([off, off + tok.length]); forms.push([tok, 2]); hit = true; break;
-      }
+    // inflected form: the word starts with the query or a stem. The rest of the word is still
+    // searched, so a repeat such as சுடர்ச்சுடரும் gets both சுடர் marked.
+    const v = vs.find((x) => tok.startsWith(x.s) && tok.length > x.s.length && endOk(x, tok[x.s.length]));
+    if (v) {
+      level = Math.max(level, 2); forms.push([tok, 2]);
+      for (const [a, b] of [[0, v.s.length], ...innerRanges(tok, vs, merged, v.s.length)]) ranges.push([off + a, off + b]);
+      continue;
     }
-    if (hit) continue;
-    for (const v of [...vs, ...merged]) {
-      const r = findInside(tok, v);
-      if (r) { level = Math.max(level, 1); ranges.push([off + r[0], off + r[1]]); forms.push([tok, 1]); break; }
+    const inner = innerRanges(tok, vs, merged, 1);
+    if (inner.length) {
+      level = Math.max(level, 1); forms.push([tok, 1]);
+      for (const [a, b] of inner) ranges.push([off + a, off + b]);
     }
   }
   return { level, ranges, forms };

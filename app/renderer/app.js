@@ -302,7 +302,7 @@ function highlight(text, ranges) {
   const merged = [];
   for (const r of ranges.slice().sort((x, y) => x[0] - y[0])) {
     const last = merged[merged.length - 1];
-    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([r[0], r[1]]);
+    if (last && r[0] < last[1]) last[1] = Math.max(last[1], r[1]); else merged.push([r[0], r[1]]);
   }
   const frag = document.createDocumentFragment();
   let p = 0;
